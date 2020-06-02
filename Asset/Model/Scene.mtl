@@ -1,0 +1,47 @@
+# Blender MTL File: 'Scene.blend'
+# Material Count: 5
+
+newmtl AppleMaterial
+map_Ka ../Asset/Apple/Color.jpg
+map_Kd ../Asset/Apple/Color.jpg
+map_norm ../Asset/Apple/Normal.jpg
+map_Pm ../Asset/Apple/Metalness.jpg
+map_Pr ../Asset/Apple/Roughness.jpg
+d 1.000000
+illum 2
+
+newmtl SuzanneMaterial
+map_Ka ../Asset/Planks/Color.jpg
+map_Kd ../Asset/Planks/Color.jpg
+map_norm ../Asset/Planks/Normal.jpg
+map_Pm ../Asset/Planks/Metalness.jpg
+map_Pr ../Asset/Planks/Roughness.jpg
+d 1.000000
+illum 3
+
+newmtl SphereMaterial
+map_Ka ../Asset/Metal/Color.jpg
+map_Kd ../Asset/Metal/Color.jpg
+map_norm ../Asset/Metal/Normal.jpg
+map_Pm ../Asset/Metal/Metalness.jpg
+map_Pr ../Asset/Metal/Roughness.jpg
+d 1.000000
+illum 3
+
+newmtl GroundMaterial
+Ka 1.000000 0.500000 0.000000
+Kd 1.000000 0.500000 0.000000
+norm 0.5 0.5 1.0
+Pm 0.2
+Pr 0.5
+d 1.000000
+illum 2
+
+newmtl WallMaterial
+Ka 0.900000 0.900000 0.900000
+Kd 0.900000 0.900000 0.900000
+norm 0.5 0.5 1.0
+Pm 0.9
+Pr 0.1
+d 1.000000
+illum 3

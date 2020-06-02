@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Frame.h"
 #include "Render.h"
+#include "Material.h"
 
 namespace sgl {
 
@@ -37,6 +38,8 @@ namespace sgl {
 	{
 		fov_ = fov;
 		SetupCamera();
+
+		auto materials = LoadMaterialsFromMtl("../Asset/Model/scene.mtl");
 	}
 
 	void Device::Draw(const double dt)
