@@ -66,12 +66,14 @@ namespace sgl {
 
 	protected:
 		void SetupCamera();
+		void LoadFromFile(std::string file);
 
 	private:
 		SceneTree scene_tree_ = {};
 		TextureManager texture_manager_ = {};
 		LightManager light_manager_ = {};
 		Camera camera_ = Camera({ 0.f, 0.f, 2.f }, { 0.f, 0.f, 0.f });
+		std::shared_ptr<sgl::Program> pbr_program_ = nullptr;
 		glm::mat4 perspective_ = glm::mat4(1.0f);
 		glm::mat4 view_ = glm::mat4(1.0f);
 		glm::mat4 model_ = glm::mat4(1.0f);

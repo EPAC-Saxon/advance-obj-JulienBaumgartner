@@ -43,6 +43,42 @@ namespace sgl {
 		CreateMeshFromFlat(points, normals, texcoords, indices);
 	}
 
+	Mesh::Mesh(const std::string& mesh_str, int delta_pos, int delta_texture, int delta_normal, const std::shared_ptr<Program>& program)
+	{
+		SetProgram(program);
+		auto obj_file = LoadFromString(mesh_str, delta_pos, delta_texture, delta_normal);
+		std::vector<float> points = {};
+		std::vector<float> normals = {};
+		std::vector<float> texcoords = {};
+		std::vector<std::int32_t> indices = {};
+		std::vector<std::array<float, 8>> vertices;
+		for (size_t i = 0; i < obj_file.indices.size(); ++i)
+		{
+			std::array<float, 8> v{};
+			v[0] = obj_file.positions[obj_file.indices[i][0]].x;
+			v[1] = obj_file.positions[obj_file.indices[i][0]].y;
+			v[2] = obj_file.positions[obj_file.indices[i][0]].z;
+			v[3] = obj_file.normals[obj_file.indices[i][2]].x;
+			v[4] = obj_file.normals[obj_file.indices[i][2]].y;
+			v[5] = obj_file.normals[obj_file.indices[i][2]].z;
+			v[6] = obj_file.textures[obj_file.indices[i][1]].x;
+			v[7] = obj_file.textures[obj_file.indices[i][1]].y;
+			vertices.emplace_back(v);
+			indices.push_back(static_cast<unsigned int>(i));
+		}
+		for (const std::array<float, 8>& v : vertices)
+		{
+			points.push_back(v[0]);
+			points.push_back(v[1]);
+			points.push_back(v[2]);
+			normals.push_back(v[3]);
+			normals.push_back(v[4]);
+			normals.push_back(v[5]);
+			texcoords.push_back(v[6]);
+			texcoords.push_back(v[7]);
+		}
+		CreateMeshFromFlat(points, normals, texcoords, indices);
+	}
 	
 	Mesh::Mesh(
 		const std::vector<float>& points,
@@ -195,23 +231,40 @@ namespace sgl {
 		{
 			throw std::runtime_error("Couldn't open file: " + file);
 		}
-		while (!ifs.eof()) 
+		std::string file_str;
+		while (!ifs.eof())
 		{
 			std::string line = "";
 			if (!std::getline(ifs, line)) break;
 			if (line.empty()) continue;
-			std::istringstream iss(line);
+			file_str += line + "\n";
+		}
+
+		return LoadFromString(file_str);
+	}
+
+	sgl::Mesh::ObjFile Mesh::LoadFromString(const std::string& str,
+		int delta_pos /*= 0*/, int delta_texture /*= 0*/, int delta_normal /*= 0*/)
+	{
+		sgl::Mesh::ObjFile obj_file{};
+		
+
+		std::istringstream iss(str);
+		std::string token;
+		while (std::getline(iss, token, '\n'))
+		{
+			std::istringstream iss(token);
 			std::string dump;
 			if (!(iss >> dump))
 			{
 				throw std::runtime_error(
-					"Error parsing file: " + file + " no token found.");
+					"Error parsing string: " + str + " no token found.");
 			}
 			if (dump.size() > 2)
 			{
-				if (dump == "mtllib") continue;
+				if (dump == "mtllib" || dump == "usemtl") continue;
 				throw std::runtime_error(
-					"Error parsing file: " + file + " token is too long.");
+					"Error parsing string: " + str + " token is too long.");
 			}
 			switch (dump[0]) {
 			case 'v':
@@ -227,22 +280,22 @@ namespace sgl {
 						if (!(iss >> v.x))
 						{
 							throw std::runtime_error(
-								"Error parsing file : " + 
-								file + 
+								"Error parsing string : " + 
+								str + 
 								" no x found in vn.");
 						}
 						if (!(iss >> v.y))
 						{
 							throw std::runtime_error(
-								"Error parsing file : " +
-								file +
+								"Error parsing string : " +
+								str +
 								" no y found in vn.");
 						}
 						if (!(iss >> v.z))
 						{
 							throw std::runtime_error(
-								"Error parsing file : " +
-								file +
+								"Error parsing string : " +
+								str +
 								" no z found in vn.");
 						}
 						obj_file.normals.push_back(v);
@@ -255,15 +308,15 @@ namespace sgl {
 						if (!(iss >> v.x))
 						{
 							throw std::runtime_error(
-								"Error parsing file : " +
-								file +
+								"Error parsing string : " +
+								str +
 								" no x found in vt.");
 						}
 						if (!(iss >> v.y))
 						{
 							throw std::runtime_error(
-								"Error parsing file : " +
-								file +
+								"Error parsing string : " +
+								str +
 								" no y found in vt.");
 						}
 						obj_file.textures.push_back(v);
@@ -272,8 +325,8 @@ namespace sgl {
 					default:
 					{
 						throw std::runtime_error(
-							"Error parsing file : " + 
-							file +
+							"Error parsing string : " + 
+							str +
 							" unknown command : " +
 							dump);
 					}
@@ -285,22 +338,22 @@ namespace sgl {
 					if (!(iss >> v.x))
 					{
 						throw std::runtime_error(
-							"Error parsing file : " +
-							file +
+							"Error parsing string : " +
+							str +
 							" no x found in v.");
 					}
 					if (!(iss >> v.y))
 					{
 						throw std::runtime_error(
-							"Error parsing file : " +
-							file +
+							"Error parsing string : " +
+							str +
 							" no y found in v.");
 					}
 					if (!(iss >> v.z))
 					{
 						throw std::runtime_error(
-							"Error parsing file : " +
-							file +
+							"Error parsing string : " +
+							str +
 							" no z found in v.");
 					}
 					obj_file.positions.push_back(v);
@@ -312,8 +365,8 @@ namespace sgl {
 				if (dump.size() > 1)
 				{
 					throw std::runtime_error(
-						"Error parsing file : " +
-						file +
+						"Error parsing string : " +
+						str +
 						" unknown command : " +
 						dump);
 				}
@@ -323,8 +376,8 @@ namespace sgl {
 					if (!(iss >> inner))
 					{
 						throw std::runtime_error(
-							"Error parsing file : " +
-							file +
+							"Error parsing string : " +
+							str +
 							" missing inner part of a description.");
 					}
 					std::array<int, 3> vi;
@@ -342,6 +395,9 @@ namespace sgl {
 							i = -1;
 						}
 					}
+					vi[0] -= delta_pos;
+					vi[1] -= delta_texture;
+					vi[2] -= delta_normal;
 					obj_file.indices.push_back(vi);
 				}
 			}
@@ -353,10 +409,11 @@ namespace sgl {
 		if (obj_file.indices.size() % 3 != 0)
 		{
 			throw std::runtime_error(
-				"Error parsing file : " +
-				file +
+				"Error parsing string : " +
+				str +
 				" indices are not triangles!");
 		}
+		
 		return obj_file;
 	}
 

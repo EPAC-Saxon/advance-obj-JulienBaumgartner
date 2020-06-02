@@ -17,6 +17,7 @@ namespace sgl {
 	{
 	public:
 		Mesh(const std::string& file, const std::shared_ptr<Program>& program);
+		Mesh(const std::string& mesh_str, int delta_pos, int delta_texture, int delta_normal, const std::shared_ptr<Program>& program);
 		Mesh(
 			const std::vector<float>& points,
 			const std::vector<float>& normals,
@@ -55,6 +56,10 @@ namespace sgl {
 		};
 		// Load from OBJ throw an exception in case of error.
 		ObjFile LoadFromObj(const std::string& file);
+		ObjFile LoadFromString(const std::string& str,
+			int delta_pos = 0,
+			int delta_texture = 0,
+			int delta_normal = 0);
 		void SetProgram(const std::shared_ptr<Program>& program);
 		void CreateMeshFromFlat(
 			const std::vector<float>& points,

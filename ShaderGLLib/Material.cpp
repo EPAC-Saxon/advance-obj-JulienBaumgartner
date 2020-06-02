@@ -42,7 +42,7 @@ namespace sgl {
 						file +
 						" no name found in newmtl.");
 				}
-				material = std::make_shared<Material>();
+				material = std::make_shared<Material>(name);
 			}
 			else if (dump == "map_Ka") {
 				std::string path;
@@ -121,6 +121,108 @@ namespace sgl {
 				}
 				material->SetIllum(illum);
 			}
+			else if (dump == "Ka") {
+				float v[3];
+				if (!(iss >> v[0]))
+				{
+					throw std::runtime_error(
+						"Error parsing file : " +
+						file +
+						" no r found in Ka.");
+				}
+				if (!(iss >> v[1]))
+				{
+					throw std::runtime_error(
+						"Error parsing file : " +
+						file +
+						" no g found in Ka.");
+				}
+				if (!(iss >> v[2]))
+				{
+					throw std::runtime_error(
+						"Error parsing file : " +
+						file +
+						" no b found in Ka.");
+				}
+
+				material->CreateAmbientTexture(v);
+			}
+			else if (dump == "Kd") {
+			float v[3];
+			if (!(iss >> v[0]))
+			{
+				throw std::runtime_error(
+					"Error parsing file : " +
+					file +
+					" no r found in Kd.");
+			}
+			if (!(iss >> v[1]))
+			{
+				throw std::runtime_error(
+					"Error parsing file : " +
+					file +
+					" no g found in Kd.");
+			}
+			if (!(iss >> v[2]))
+			{
+				throw std::runtime_error(
+					"Error parsing file : " +
+					file +
+					" no b found in Kd.");
+			}
+
+			material->CreateDiffuseTexture(v);
+			}
+			else if (dump == "norm") {
+			float v[3];
+			if (!(iss >> v[0]))
+			{
+				throw std::runtime_error(
+					"Error parsing file : " +
+					file +
+					" no r found in norm.");
+			}
+			if (!(iss >> v[1]))
+			{
+				throw std::runtime_error(
+					"Error parsing file : " +
+					file +
+					" no g found in norm.");
+			}
+			if (!(iss >> v[2]))
+			{
+				throw std::runtime_error(
+					"Error parsing file : " +
+					file +
+					" no b found in norm.");
+			}
+
+			material->CreateNormalTexture(v);
+			}
+			else if (dump == "Pm") {
+			float v;
+			if (!(iss >> v))
+			{
+				throw std::runtime_error(
+					"Error parsing file : " +
+					file +
+					" no value found in Pm.");
+			}
+
+			material->CreateMetallicTexture(&v);
+			}
+			else if (dump == "Pr") {
+			float v;
+			if (!(iss >> v))
+			{
+				throw std::runtime_error(
+					"Error parsing file : " +
+					file +
+					" no value found in Pr.");
+			}
+
+			material->CreateRoughnessTexture(&v);
+			}
 			
 		}
 
@@ -129,7 +231,7 @@ namespace sgl {
 	}
 
 
-	Material::Material()
+	Material::Material(std::string name) : name_(name)
 	{
 	}
 
@@ -166,6 +268,51 @@ namespace sgl {
 	void Material::SetIllum(float illum)
 	{
 		illum_ = illum;
+	}
+
+	void Material::CreateAmbientTexture(void* data)
+	{
+		ambient_texture_ = std::make_shared<Texture>(std::pair(1,1), data, PixelElementSize::FLOAT, PixelStructure::RGB);
+	}
+
+	void Material::CreateDiffuseTexture(void* data)
+	{
+		diffuse_texture_ = std::make_shared<Texture>(std::pair(1, 1), data, PixelElementSize::FLOAT, PixelStructure::RGB);
+	}
+
+	void Material::CreateNormalTexture(void* data)
+	{
+		normal_texture_ = std::make_shared<Texture>(std::pair(1, 1), data, PixelElementSize::FLOAT, PixelStructure::RGB);
+	}
+
+	void Material::CreateMetallicTexture(void* data)
+	{
+		metallic_texture_ = std::make_shared<Texture>(std::pair(1, 1), data, PixelElementSize::FLOAT, PixelStructure::GREY);
+	}
+
+	void Material::CreateRoughnessTexture(void* data)
+	{
+		roughness_texture_ = std::make_shared<Texture>(std::pair(1, 1), data, PixelElementSize::FLOAT, PixelStructure::GREY);
+	}
+
+	void Material::AddTextures(TextureManager& texture_manager)
+	{
+		texture_manager.AddTexture(name_ + "Ambient", ambient_texture_);
+		texture_manager.AddTexture(name_ + "Diffuse", diffuse_texture_);
+		texture_manager.AddTexture(name_ + "Normal", normal_texture_);
+		texture_manager.AddTexture(name_ + "Metallic", metallic_texture_);
+		texture_manager.AddTexture(name_ + "Roughness", roughness_texture_);
+	}
+
+	std::vector<std::string> Material::GetTexturesName()
+	{
+		std::vector<std::string> names;
+		names.push_back(name_ + "Ambient");
+		names.push_back(name_ + "Diffuse");
+		names.push_back(name_ + "Normal");
+		names.push_back(name_ + "Metallic");
+		names.push_back(name_ + "Roughness");
+		return names;
 	}
 
 }

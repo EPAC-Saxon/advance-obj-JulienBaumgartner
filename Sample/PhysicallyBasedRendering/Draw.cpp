@@ -15,22 +15,6 @@ void Draw::Startup(const std::pair<std::uint32_t, std::uint32_t> size)
 	// Create the back cube map.
 	auto cube_map_mesh = CreateCubeMapMesh(device_, texture);
 
-	// Pack it into a Scene object.
-	sgl::SceneTree scene_tree{};
-	{
-		auto scene_root = std::make_shared<sgl::SceneMatrix>(glm::mat4(1.0));
-		scene_tree.AddNode(scene_root);
-		scene_tree.AddNode(
-			std::make_shared<sgl::SceneMesh>(cube_map_mesh),
-			scene_root);
-		auto scene_matrix = std::make_shared<sgl::SceneMatrix>(glm::mat4(1.0));
-		scene_tree.AddNode(scene_matrix, scene_root);
-		scene_tree.AddNode(
-			std::make_shared<sgl::SceneMesh>(mesh),
-			scene_matrix);
-	}
-	device_->SetSceneTree(scene_tree);
-
 	// Albedo.
 	deferred_textures_.emplace_back(
 		std::make_shared<sgl::Texture>(size, pixel_element_size_));

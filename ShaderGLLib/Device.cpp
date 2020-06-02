@@ -1,5 +1,8 @@
 #include "Device.h"
 #include <stdexcept>
+#include <iterator>
+#include <fstream>
+#include <sstream>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Frame.h"
 #include "Render.h"
@@ -39,7 +42,13 @@ namespace sgl {
 		fov_ = fov;
 		SetupCamera();
 
-		auto materials = LoadMaterialsFromMtl("../Asset/Model/scene.mtl");
+		// Create the physically based rendering program.
+		pbr_program_ = sgl::CreateProgram("PhysicallyBasedRendering");
+		pbr_program_->UniformMatrix("projection", GetProjection());
+		pbr_program_->UniformMatrix("view", GetView());
+		pbr_program_->UniformMatrix("model", GetModel());
+
+		LoadFromFile("../Asset/Model/scene.obj");
 	}
 
 	void Device::Draw(const double dt)
@@ -133,6 +142,136 @@ namespace sgl {
 
 		// Set the camera.
 		view_ = camera_.GetLookAt();
+	}
+
+	void Device::LoadFromFile(std::string file)
+	{
+
+		sgl::SceneTree scene_tree{};
+		{
+			auto scene_root = std::make_shared<sgl::SceneMatrix>(glm::mat4(1.0));
+
+			scene_tree.AddNode(scene_root);
+
+			std::ifstream ifs;
+			ifs.open(file, std::ifstream::in);
+			if (!ifs.is_open())
+			{
+				throw std::runtime_error("Couldn't open file: " + file);
+			}
+
+			std::map<std::string, std::shared_ptr<Material>> materials;
+			std::string mesh_str;
+			std::string texture_name;
+			int delta_pos = INT_MAX;
+			int delta_texture = INT_MAX;
+			int delta_normal = INT_MAX;
+			while (!ifs.eof())
+			{
+				std::string line = "";
+				if (!std::getline(ifs, line)) break;
+				if (line.empty()) continue;
+				std::istringstream iss(line);
+				std::string dump;
+				if (!(iss >> dump))
+				{
+					throw std::runtime_error(
+						"Error parsing file: " + file + " no token found.");
+				}
+
+				if (dump == "mtllib")
+				{
+					std::string mtl_name;
+					if (!(iss >> mtl_name))
+					{
+						throw std::runtime_error(
+							"Error parsing file : " +
+							file +
+							" missing mtl_name file name.");
+					}
+					materials = LoadMaterialsFromMtl("../Asset/Model/" + mtl_name);
+
+					for (const auto& material : materials)
+					{
+						material.second->AddTextures(texture_manager_);
+					}
+
+				}
+				else if (dump == "usemtl")
+				{
+					if (!(iss >> texture_name))
+					{
+						throw std::runtime_error(
+							"Error parsing file : " +
+							file +
+							" missing material name.");
+					}
+				}
+				else if (dump == "o")
+				{
+					if (delta_pos != INT_MAX)
+					{
+						auto mesh = std::make_shared<Mesh>(mesh_str, delta_pos, delta_texture, delta_normal, pbr_program_);
+
+
+						// Set the texture to be used in the shader.
+						mesh->SetTextures(materials[texture_name]->GetTexturesName());
+						scene_tree.AddNode(std::make_shared<sgl::SceneMesh>(mesh), scene_root);
+					}
+					mesh_str = "";
+					delta_pos = INT_MAX;
+					delta_texture = INT_MAX;
+					delta_normal = INT_MAX;
+
+				}
+				else if (dump == "f")
+				{
+					for (int i = 0; i < 3; ++i)
+					{
+						std::string inner;
+						if (!(iss >> inner))
+						{
+							throw std::runtime_error(
+								"Error parsing file : " +
+								file +
+								" missing inner part of a description.");
+						}
+						std::array<int, 3> vi;
+						std::istringstream viss(inner);
+						for (int& i : vi)
+						{
+							std::string inner_val;
+							std::getline(viss, inner_val, '/');
+							if (!inner_val.empty())
+							{
+								i = atoi(inner_val.c_str()) - 1;
+							}
+							else
+							{
+								i = -1;
+							}
+						}
+
+						if (vi[0] < delta_pos)
+						{
+							delta_pos = vi[0];
+						}
+						if (vi[1] < delta_texture)
+						{
+							delta_texture = vi[1];
+						}
+						if (vi[2] < delta_normal)
+						{
+							delta_normal = vi[2];
+						}
+					}
+				}
+
+				mesh_str += line + "\n";
+			}
+		}
+
+		SetSceneTree(scene_tree);
 	}
 
 } // End namespace sgl.
